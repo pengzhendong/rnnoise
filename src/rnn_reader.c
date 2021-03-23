@@ -38,9 +38,9 @@
 
 /* Although these values are the same as in rnn.h, we make them separate to
  * avoid accidentally burning internal values into a file format */
-#define F_ACTIVATION_TANH       0
-#define F_ACTIVATION_SIGMOID    1
-#define F_ACTIVATION_RELU       2
+#define F_ACTIVATION_TANH 0
+#define F_ACTIVATION_SIGMOID 1
+#define F_ACTIVATION_RELU 2
 
 RNNModel *rnnoise_model_from_file(FILE *f)
 {
@@ -53,13 +53,14 @@ RNNModel *rnnoise_model_from_file(FILE *f)
     if (!ret)
         return NULL;
 
-#define ALLOC_LAYER(type, name) \
-    type *name; \
+#define ALLOC_LAYER(type, name)     \
+    type *name;                     \
     name = calloc(1, sizeof(type)); \
-    if (!name) { \
-        rnnoise_model_free(ret); \
-        return NULL; \
-    } \
+    if (!name)                      \
+    {                               \
+        rnnoise_model_free(ret);    \
+        return NULL;                \
+    }                               \
     ret->name = name
 
     ALLOC_LAYER(DenseLayer, input_dense);
@@ -69,62 +70,77 @@ RNNModel *rnnoise_model_from_file(FILE *f)
     ALLOC_LAYER(DenseLayer, denoise_output);
     ALLOC_LAYER(DenseLayer, vad_output);
 
-#define INPUT_VAL(name) do { \
-    if (fscanf(f, "%d", &in) != 1 || in < 0 || in > 128) { \
-        rnnoise_model_free(ret); \
-        return NULL; \
-    } \
-    name = in; \
+#define INPUT_VAL(name)                                      \
+    do                                                       \
+    {                                                        \
+        if (fscanf(f, "%d", &in) != 1 || in < 0 || in > 128) \
+        {                                                    \
+            rnnoise_model_free(ret);                         \
+            return NULL;                                     \
+        }                                                    \
+        name = in;                                           \
     } while (0)
 
-#define INPUT_ACTIVATION(name) do { \
-    int activation; \
-    INPUT_VAL(activation); \
-    switch (activation) { \
-        case F_ACTIVATION_SIGMOID: \
+#define INPUT_ACTIVATION(name)         \
+    do                                 \
+    {                                  \
+        int activation;                \
+        INPUT_VAL(activation);         \
+        switch (activation)            \
+        {                              \
+        case F_ACTIVATION_SIGMOID:     \
             name = ACTIVATION_SIGMOID; \
-            break; \
-        case F_ACTIVATION_RELU: \
-            name = ACTIVATION_RELU; \
-            break; \
-        default: \
-            name = ACTIVATION_TANH; \
-    } \
+            break;                     \
+        case F_ACTIVATION_RELU:        \
+            name = ACTIVATION_RELU;    \
+            break;                     \
+        default:                       \
+            name = ACTIVATION_TANH;    \
+        }                              \
     } while (0)
 
-#define INPUT_ARRAY(name, len) do { \
-    rnn_weight *values = malloc((len) * sizeof(rnn_weight)); \
-    if (!values) { \
-        rnnoise_model_free(ret); \
-        return NULL; \
-    } \
-    name = values; \
-    for (i = 0; i < (len); i++) { \
-        if (fscanf(f, "%d", &in) != 1) { \
-            rnnoise_model_free(ret); \
-            return NULL; \
-        } \
-        values[i] = in; \
-    } \
+#define INPUT_ARRAY(name, len)                                   \
+    do                                                           \
+    {                                                            \
+        rnn_weight *values = malloc((len) * sizeof(rnn_weight)); \
+        if (!values)                                             \
+        {                                                        \
+            rnnoise_model_free(ret);                             \
+            return NULL;                                         \
+        }                                                        \
+        name = values;                                           \
+        for (i = 0; i < (len); i++)                              \
+        {                                                        \
+            if (fscanf(f, "%d", &in) != 1)                       \
+            {                                                    \
+                rnnoise_model_free(ret);                         \
+                return NULL;                                     \
+            }                                                    \
+            values[i] = in;                                      \
+        }                                                        \
     } while (0)
 
-#define INPUT_DENSE(name) do { \
-    INPUT_VAL(name->nb_inputs); \
-    INPUT_VAL(name->nb_neurons); \
-    ret->name ## _size = name->nb_neurons; \
-    INPUT_ACTIVATION(name->activation); \
-    INPUT_ARRAY(name->input_weights, name->nb_inputs * name->nb_neurons); \
-    INPUT_ARRAY(name->bias, name->nb_neurons); \
+#define INPUT_DENSE(name)                                                     \
+    do                                                                        \
+    {                                                                         \
+        INPUT_VAL(name->nb_inputs);                                           \
+        INPUT_VAL(name->nb_neurons);                                          \
+        ret->name##_size = name->nb_neurons;                                  \
+        INPUT_ACTIVATION(name->activation);                                   \
+        INPUT_ARRAY(name->input_weights, name->nb_inputs * name->nb_neurons); \
+        INPUT_ARRAY(name->bias, name->nb_neurons);                            \
     } while (0)
 
-#define INPUT_GRU(name) do { \
-    INPUT_VAL(name->nb_inputs); \
-    INPUT_VAL(name->nb_neurons); \
-    ret->name ## _size = name->nb_neurons; \
-    INPUT_ACTIVATION(name->activation); \
-    INPUT_ARRAY(name->input_weights, name->nb_inputs * name->nb_neurons * 3); \
-    INPUT_ARRAY(name->recurrent_weights, name->nb_neurons * name->nb_neurons * 3); \
-    INPUT_ARRAY(name->bias, name->nb_neurons * 3); \
+#define INPUT_GRU(name)                                                                \
+    do                                                                                 \
+    {                                                                                  \
+        INPUT_VAL(name->nb_inputs);                                                    \
+        INPUT_VAL(name->nb_neurons);                                                   \
+        ret->name##_size = name->nb_neurons;                                           \
+        INPUT_ACTIVATION(name->activation);                                            \
+        INPUT_ARRAY(name->input_weights, name->nb_inputs * name->nb_neurons * 3);      \
+        INPUT_ARRAY(name->recurrent_weights, name->nb_neurons * name->nb_neurons * 3); \
+        INPUT_ARRAY(name->bias, name->nb_neurons * 3);                                 \
     } while (0)
 
     INPUT_DENSE(input_dense);
@@ -139,21 +155,32 @@ RNNModel *rnnoise_model_from_file(FILE *f)
 
 void rnnoise_model_free(RNNModel *model)
 {
-#define FREE_MAYBE(ptr) do { if (ptr) free(ptr); } while (0)
-#define FREE_DENSE(name) do { \
-    if (model->name) { \
-        free((void *) model->name->input_weights); \
-        free((void *) model->name->bias); \
-        free((void *) model->name); \
-    } \
+#define FREE_MAYBE(ptr) \
+    do                  \
+    {                   \
+        if (ptr)        \
+            free(ptr);  \
     } while (0)
-#define FREE_GRU(name) do { \
-    if (model->name) { \
-        free((void *) model->name->input_weights); \
-        free((void *) model->name->recurrent_weights); \
-        free((void *) model->name->bias); \
-        free((void *) model->name); \
-    } \
+#define FREE_DENSE(name)                              \
+    do                                                \
+    {                                                 \
+        if (model->name)                              \
+        {                                             \
+            free((void *)model->name->input_weights); \
+            free((void *)model->name->bias);          \
+            free((void *)model->name);                \
+        }                                             \
+    } while (0)
+#define FREE_GRU(name)                                    \
+    do                                                    \
+    {                                                     \
+        if (model->name)                                  \
+        {                                                 \
+            free((void *)model->name->input_weights);     \
+            free((void *)model->name->recurrent_weights); \
+            free((void *)model->name->bias);              \
+            free((void *)model->name);                    \
+        }                                                 \
     } while (0)
 
     if (!model)

@@ -12,30 +12,33 @@ import sys
 import re
 import numpy as np
 
+
 def printVector(f, ft, vector, name):
-    v = np.reshape(vector, (-1));
+    v = np.reshape(vector, (-1))
     #print('static const float ', name, '[', len(v), '] = \n', file=f)
     f.write('static const rnn_weight {}[{}] = {{\n   '.format(name, len(v)))
     for i in range(0, len(v)):
         f.write('{}'.format(min(127, int(round(256*v[i])))))
         ft.write('{}'.format(min(127, int(round(256*v[i])))))
-        if (i!=len(v)-1):
+        if (i != len(v)-1):
             f.write(',')
         else:
-            break;
+            break
         ft.write(" ")
-        if (i%8==7):
+        if (i % 8 == 7):
             f.write("\n   ")
         else:
             f.write(" ")
     #print(v, file=f)
     f.write('\n};\n\n')
     ft.write("\n")
-    return;
+    return
+
 
 def printLayer(f, ft, layer):
     weights = layer.get_weights()
-    activation = re.search('function (.*) at', str(layer.activation)).group(1).upper()
+    activation = re.search(
+        'function (.*) at', str(layer.activation)).group(1).upper()
     if len(weights) > 2:
         ft.write('{} {} '.format(weights[0].shape[0], weights[0].shape[1]/3))
     else:
@@ -58,6 +61,7 @@ def printLayer(f, ft, layer):
         f.write('static const DenseLayer {} = {{\n   {}_bias,\n   {}_weights,\n   {}, {}, ACTIVATION_{}\n}};\n\n'
                 .format(name, name, name, weights[0].shape[0], weights[0].shape[1], activation))
 
+
 def structLayer(f, layer):
     weights = layer.get_weights()
     name = layer.name
@@ -71,11 +75,13 @@ def structLayer(f, layer):
 def foo(c, name):
     return None
 
+
 def mean_squared_sqrt_error(y_true, y_pred):
     return K.mean(K.square(K.sqrt(y_pred) - K.sqrt(y_true)), axis=-1)
 
 
-model = load_model(sys.argv[1], custom_objects={'msse': mean_squared_sqrt_error, 'mean_squared_sqrt_error': mean_squared_sqrt_error, 'my_crossentropy': mean_squared_sqrt_error, 'mycost': mean_squared_sqrt_error, 'WeightClip': foo})
+model = load_model(sys.argv[1], custom_objects={'msse': mean_squared_sqrt_error, 'mean_squared_sqrt_error': mean_squared_sqrt_error,
+                                                'my_crossentropy': mean_squared_sqrt_error, 'mycost': mean_squared_sqrt_error, 'WeightClip': foo})
 
 weights = model.get_weights()
 
@@ -100,8 +106,8 @@ for i, layer in enumerate(model.layers):
 f.write('};\n')
 
 #hf.write('struct RNNState {\n')
-#for i, name in enumerate(layer_list):
-#    hf.write('  float {}_state[{}_SIZE];\n'.format(name, name.upper())) 
-#hf.write('};\n')
+# for i, name in enumerate(layer_list):
+#    hf.write('  float {}_state[{}_SIZE];\n'.format(name, name.upper()))
+# hf.write('};\n')
 
 f.close()
